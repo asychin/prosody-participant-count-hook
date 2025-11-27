@@ -1,0 +1,30 @@
+services:
+  prospydoor:
+    build: .
+    container_name: prospydoor
+    restart: unless-stopped
+    ports:
+      - '${PROSPYDOOR_PORT:-8890}:8000'
+    environment:
+      - API_KEY=${PROSPYDOOR_API_KEY}
+      - PROSODY_URL=${PROSODY_URL:-http://docker-jitsi-meet-prosody-1:5280}
+      - MUC_DOMAIN=${MUC_DOMAIN:-muc.meet.yourdomain.com}
+      - DEBUG=${DEBUG:-false}
+      - TZ=${TZ:-UTC}
+    networks:
+      - jitsi
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health', timeout=5.0)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      service: "prospydoor"
+      description: "ProsPyDoor - Prosody Python Door API"
+
+networks:
+  jitsi:
+    external: true
+    name: docker-jitsi-meet_meet.jitsi
+
