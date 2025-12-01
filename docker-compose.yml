@@ -26,5 +26,5 @@ services:
 networks:
   jitsi:
     external: true
-    name: docker-jitsi-meet_meet.jitsi
+    name: jitsi_meet.jitsi
 

@@ -35,6 +35,7 @@ class RoomParticipantsResponse(BaseModel):
     exists: bool
     participant_count: int
     has_participants: bool
+    participants: list[str] = []
     room_jid: Optional[str] = None
 
 

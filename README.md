@@ -10,7 +10,27 @@ Standalone microservice to check for participants in Jitsi Meet rooms without jo
 
 ## 🚀 Quick Start
 
-### 1. Setup
+### 1. Prosody Module Installation (REQUIRED!)
+
+**ProsPyDoor requires a specific Prosody module to function.**
+
+Copy the module to the Prosody plugins directory:
+```bash
+cp mod_room_participants_api.lua /path/to/jitsi/.jitsi-meet-cfg/prosody/prosody-plugins-custom/
+```
+
+Add the module to the Jitsi `.env` file:
+```bash
+cd /path/to/jitsi
+echo "GLOBAL_MODULES=http,room_participants_api" >> .env
+```
+
+Restart Prosody:
+```bash
+docker compose restart prosody
+```
+
+### 2. ProsPyDoor Configuration
 
 Copy the example configuration:
 ```bash
@@ -25,24 +45,36 @@ nano .env
 
 **Mandatory changes:**
 - `PROSPYDOOR_API_KEY` - your secret API key
-- `MUC_DOMAIN` - your MUC domain (if different)
+- `PROSODY_URL` - Prosody URL (usually `http://prosody:5280`)
+- `MUC_DOMAIN` - your MUC domain (e.g., `muc.meet.yourdomain.com`)
 
-### 2. Launch
+### 3. Launch
 
 ```bash
 cd prospydoor
 docker compose up -d
 ```
 
-### 3. Verification
+### 4. Verification
 
 ```bash
 # Health check
 curl http://localhost:8890/health
 
 # Check room (use your API key from .env)
+# IMPORTANT: room name must be in LOWERCASE!
 curl -H "X-API-Key: your-api-key" \
-  http://localhost:8890/api/rooms/TestRoom/participants
+  http://localhost:8890/api/rooms/testroom/participants
+```
+
+**Expected response (if module is installed correctly):**
+```json
+{
+  "status": "ok",
+  "service": "ProsPyDoor - Prosody Python Door",
+  "version": "1.0.0",
+  "prosody_status": "ok"  // <-- Should be "ok", not "error"!
+}
 ```
 
 ---
@@ -147,6 +179,7 @@ curl -H "X-API-Key: your-api-key" \
   "exists": false,
   "participant_count": 0,
   "has_participants": false,
+  "participants": [],
   "room_jid": null
 }
 ```
@@ -278,18 +311,48 @@ If ProsPyDoor cannot connect to Prosody:
 - Docker Engine 20.10+
 - Docker Compose V2
 - Running Jitsi Meet stack with Prosody
-- Prosody module `mod_room_participants_api.lua` installed and loaded
+- **Prosody module `mod_room_participants_api.lua` installed and loaded** ⚠️
+
+### Prosody Module Installation
+
+1. Copy `mod_room_participants_api.lua` to the plugins directory:
+   ```bash
+   cp mod_room_participants_api.lua /path/to/jitsi/.jitsi-meet-cfg/prosody/prosody-plugins-custom/
+   ```
+
+2. Add the module to Jitsi `.env`:
+   ```bash
+   # In /path/to/jitsi/.env add or update:
+   GLOBAL_MODULES=http,room_participants_api
+   ```
+
+3. Restart Prosody:
+   ```bash
+   cd /path/to/jitsi
+   docker compose restart prosody
+   ```
+
+4. Check logs:
+   ```bash
+   docker logs jitsi-prosody-1 | grep room_participants_api
+   # Should output: "Room Participants API loaded for MUC domain: ..."
+   ```
 
 ---
 
 ## 🔗 Jitsi Integration
 
-ProsPyDoor connects to the existing Jitsi network (`docker-jitsi-meet_meet.jitsi`) and communicates with the Prosody container directly.
+ProsPyDoor connects to the existing Jitsi network (`jitsi_meet.jitsi`) and communicates with the Prosody container directly.
 
 **Requirements:**
 1. Main Jitsi stack must be running.
 2. Prosody must have `room_participants_api` module loaded.
 3. In main Jitsi `.env`: `GLOBAL_MODULES=http,room_participants_api`.
+
+**Important about room names:**
+- Jitsi automatically converts room names to **lowercase**
+- Use `bravephoenixescreatelovingly` instead of `BravePhoenixesCreateLovingly`
+- The API automatically converts names to lowercase for convenience
 
 ---
 
